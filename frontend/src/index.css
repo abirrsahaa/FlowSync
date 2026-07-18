@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* App shell — light "precision instrument" theme */
+  --app-bg: #f7f5f0;
+  --app-surface: #ffffff;
+  --app-surface-muted: #f0eee7;
+  --app-border: #d8d4c8;
+  --app-border-strong: #14161f;
+  --app-ink: #14161f;
+  --app-ink-muted: #6b7080;
+  --app-navy: #16233f;
+  --app-navy-hover: #223255;
+  --app-gold: #a8791a;
+  --app-green: #2f6b3a;
+  --app-red: #8b2e2e;
+
+  /* Console — dark "mission control" theme (landing, auth) */
+  --console-bg: #05070c;
+  --console-surface: #0b0f17;
+  --console-border: rgba(255, 255, 255, 0.1);
+  --console-ink: #e7eaf0;
+  --console-ink-muted: #8891a6;
+  --console-mint: #22d3a6;
+  --console-cyan: #38bdf8;
+  --console-red: #f87171;
+
+  /* Gate states — shared by both themes, always a status dot/pill, never pass/fail */
+  --gate-open: #2f6b3a;
+  --gate-soft: #a8791a;
+  --gate-flagged: #8b2e2e;
+
+  --dot-color: rgba(20, 22, 31, 0.08);
+}
+
+.theme-console {
+  --dot-color: rgba(231, 234, 240, 0.06);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-app-bg text-app-ink font-sans antialiased;
+  margin: 0;
+}
+
+.theme-console {
+  @apply bg-console-bg text-console-ink;
+}
