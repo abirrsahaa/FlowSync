@@ -4,16 +4,19 @@ import type { AuthService } from './interfaces/AuthService'
 import type { ProblemsService } from './interfaces/ProblemsService'
 import type { SessionService } from './interfaces/SessionService'
 import type { ReviewStreamService } from './interfaces/ReviewStreamService'
+import type { DashboardService } from './interfaces/DashboardService'
 import { MockAuthService } from './mock/mockAuthService'
 import { MockProblemsService } from './mock/mockProblemsService'
 import { MockSessionService } from './mock/mockSessionService'
 import { MockReviewStreamService } from './mock/mockReviewStreamService'
+import { MockDashboardService } from './mock/mockDashboardService'
 
 export interface Services {
   authService: AuthService
   problemsService: ProblemsService
   sessionService: SessionService
   reviewStreamService: ReviewStreamService
+  dashboardService: DashboardService
 }
 
 function createMockServices(): Services {
@@ -22,6 +25,7 @@ function createMockServices(): Services {
     problemsService: new MockProblemsService(),
     sessionService: new MockSessionService(),
     reviewStreamService: new MockReviewStreamService(),
+    dashboardService: new MockDashboardService(),
   }
 }
 

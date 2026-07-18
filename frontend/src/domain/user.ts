@@ -9,3 +9,32 @@ export interface User {
   picture?: string
   roles: Array<'user' | 'interviewer'>
 }
+
+// Dashboard-only aggregates — not part of Section 20's wire contracts, derived
+// from a user's session history the same way the real backend would compute
+// them (an aggregation over SessionDocuments), not a separate stored entity.
+
+export interface SkillProficiency {
+  axis: string // e.g. "CDN", "Database" — matches concept tags on Problem
+  score: number // 0-10
+}
+
+export interface UserStats {
+  userId: string
+  designation: string // "Senior II"
+  rankLabel: string // "L6 Rank"
+  avgPrecisionScore: number
+  conceptsMastered: number
+  streakDays: number
+  skillProficiency: SkillProficiency[]
+}
+
+export interface HistoricalLogEntry {
+  sessionId: string // links to a real SessionDocument/FinalReport
+  problemId: string
+  problemTitle: string
+  problemVersion: number
+  score: number
+  topGap: string
+  completedAt: Date
+}
