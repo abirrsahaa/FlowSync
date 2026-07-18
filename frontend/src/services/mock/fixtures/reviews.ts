@@ -102,3 +102,37 @@ export const hldReviewFixture = {
   findings: hldFindings,
   verdict: buildVerdict(hldFindings, 6, 4200),
 }
+
+// Stage 6 — Deep Dive. Same canvas shell (Session 7), an LLD-focused persona:
+// indexing, retries/circuit breakers, pagination, failure modes (Section 5).
+// nodeId targets reuse the same seeded demo nodes the HLD canvas places, so
+// the finding-arrival glow (editor.setHintingShapes) has a real shape to hit.
+const deepDiveFindings: Finding[] = [
+  {
+    severity: 'CRITICAL',
+    point: 'Metadata Service has no circuit breaker around its DB calls — a slow Postgres primary will cascade into request-thread exhaustion.',
+    evidence: 'At 500,000 read QPS, one degraded dependency without a breaker takes the whole read path down with it.',
+    nodeId: 'metadata-service-1',
+    checkpointId: 'dd-2-2',
+  },
+  {
+    severity: 'MAJOR',
+    point: 'Write path to Postgres is not idempotent under retry — a retried view-count write could double-count.',
+    evidence: 'Retries are necessary at this scale but only safe if the write carries a dedup key.',
+    nodeId: 'postgres-db-1',
+    checkpointId: 'dd-4-2',
+  },
+  {
+    severity: 'MINOR',
+    point: 'Search/list endpoints were not discussed with cursor-based pagination — offset pagination degrades badly on a large result set.',
+    evidence: "Section 3's API design should carry this forward, but it's worth re-confirming at the LLD level.",
+    checkpointId: 'dd-3-1',
+  },
+]
+
+export const deepDiveReviewFixture = {
+  commentary:
+    "Zooming into the metadata service and its data path. The retry policy toward Postgres is a good start, but two failure-mode gaps stand out at this level of detail — the kind of thing that only shows up once you stop drawing boxes and start reasoning about what happens when a dependency gets slow.",
+  findings: deepDiveFindings,
+  verdict: buildVerdict(deepDiveFindings, 6, 4600),
+}

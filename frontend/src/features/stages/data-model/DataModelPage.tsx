@@ -2,7 +2,7 @@
 // design, index strategy, storage technology, partitioning strategy.
 // Reviewed for N+1 risk, hot partitions, consistency model.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -95,11 +95,39 @@ function seedTables(): TableDraft[] {
 }
 
 export function DataModelPage() {
-  const { sessionId, problem } = useStageSession()
+  const { sessionId, problem, stages, loading } = useStageSession()
   const navigate = useNavigate()
   const review = useReviewStream('datamodel', sessionId)
 
   const [tables, setTables] = useState<TableDraft[]>(seedTables)
+
+  useEffect(() => {
+    if (loading) return
+    const saved = stages.find((s) => s.stageId === 'datamodel')?.userContent as
+      | {
+          tables: Array<{
+            name: string
+            storageEngine: string
+            columns: Array<{ name: string; type: string }>
+            indexes: string[]
+            partitioningStrategy: string
+          }>
+        }
+      | undefined
+    setTables(
+      saved
+        ? saved.tables.map((t) =>
+            makeTable(
+              t.name,
+              t.storageEngine,
+              t.columns.map((c) => makeColumn(c.name, c.type)),
+              t.indexes.join('\n'),
+              t.partitioningStrategy,
+            ),
+          )
+        : seedTables(),
+    )
+  }, [sessionId, loading, stages])
 
   function updateTable(id: string, patch: Partial<TableDraft>) {
     setTables((items) => items.map((t) => (t.id === id ? { ...t, ...patch } : t)))

@@ -18,11 +18,10 @@ const PROBLEM_ICON: Record<string, typeof PlaySquare> = {
   tinyurl: Link2,
 }
 
+const COMPACT_FORMATTER = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 0 })
+
 function formatCompact(n: number): string {
-  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(0)} Billion`
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(0)} Million`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`
-  return `${n}`
+  return COMPACT_FORMATTER.format(n)
 }
 
 export interface ProblemCardProps {
@@ -44,7 +43,8 @@ export function ProblemCard({
 }: ProblemCardProps) {
   const Icon = PROBLEM_ICON[problem.id] ?? PlaySquare
   const isCompleted = completedScore !== undefined
-  const readWriteRatio = Math.round(problem.expectedScale.readQps / problem.expectedScale.writeQps)
+  const readWriteRatio =
+    problem.expectedScale.writeQps > 0 ? Math.round(problem.expectedScale.readQps / problem.expectedScale.writeQps) : 0
 
   return (
     <Card className="flex flex-col">

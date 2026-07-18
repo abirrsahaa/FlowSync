@@ -4,7 +4,7 @@
 // On reaching 'final' it also writes the gate state into sessionProgressStore
 // and persists the stage via SessionService — callers just call submit().
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useServices } from '@/services/ServiceProvider'
 import { useSessionProgressStore } from '@/store/sessionProgressStore'
 import type { Finding, ReviewerVerdict } from '@/domain/review'
@@ -50,6 +50,12 @@ export function useReviewStream(stageId: TextStageId, sessionId: string): UseRev
     setError(null)
   }, [])
 
+  // Switching stages or sessions must invalidate any in-flight stream and
+  // clear the previous stage's verdict/findings before the new one renders.
+  useEffect(() => {
+    reset()
+  }, [stageId, sessionId, reset])
+
   const submit = useCallback(
     (userContent: Record<string, any>, stageContext: StageContext = {}) => {
       const thisRun = ++runId.current
@@ -86,7 +92,11 @@ export function useReviewStream(stageId: TextStageId, sessionId: string): UseRev
               setVerdict(finalVerdict)
               setStatus('final')
               recordVerdict(stageId, finalVerdict.score, finalVerdict.gateState)
-              void sessionService.submitStage(sessionId, stageId, userContent, finalVerdict)
+              // Gate/score already landed in sessionProgressStore above — this
+              // persistence call is best-effort and throws if the session was
+              // opened by URL without going through the dashboard's
+              // createSession (no in-memory SessionDocument to attach to).
+              sessionService.submitStage(sessionId, stageId, userContent, finalVerdict).catch(() => {})
             }
           }
         } catch (err) {

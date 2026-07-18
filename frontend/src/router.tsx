@@ -9,18 +9,12 @@ import { RequirementsPage } from '@/features/stages/requirements/RequirementsPag
 import { EstimationPage } from '@/features/stages/estimation/EstimationPage'
 import { ApiDesignPage } from '@/features/stages/api-design/ApiDesignPage'
 import { DataModelPage } from '@/features/stages/data-model/DataModelPage'
+import { HldCanvasPage } from '@/features/stages/hld-canvas/HldCanvasPage'
+import { DeepDivePage } from '@/features/stages/deep-dive/DeepDivePage'
 
 function AppRoute({ sessionNumber, name }: { sessionNumber: number; name: string }) {
   return (
     <AppShell>
-      <RouteStub sessionNumber={sessionNumber} name={name} />
-    </AppShell>
-  )
-}
-
-function StageRoute({ sessionNumber, name }: { sessionNumber: number; name: string }) {
-  return (
-    <AppShell navSlot={<StageTopNav />} actions={<SubmitSolutionButton />}>
       <RouteStub sessionNumber={sessionNumber} name={name} />
     </AppShell>
   )
@@ -75,11 +69,19 @@ export function AppRouter() {
       />
       <Route
         path="/session/:sessionId/hld-canvas"
-        element={<StageRoute sessionNumber={7} name="Stage 5 — HLD Canvas" />}
+        element={
+          <AppShell navSlot={<StageTopNav />} actions={<SubmitSolutionButton />}>
+            <HldCanvasPage />
+          </AppShell>
+        }
       />
       <Route
         path="/session/:sessionId/deep-dive"
-        element={<StageRoute sessionNumber={7} name="Stage 6 — Deep Dive" />}
+        element={
+          <AppShell navSlot={<StageTopNav />} actions={<SubmitSolutionButton />}>
+            <DeepDivePage />
+          </AppShell>
+        }
       />
 
       <Route

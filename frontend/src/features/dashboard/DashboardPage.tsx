@@ -22,31 +22,40 @@ export function DashboardPage() {
   const [logs, setLogs] = useState<HistoricalLogEntry[]>([])
   const [recommended, setRecommended] = useState<RecommendedProblem | undefined>()
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
 
     async function load() {
-      // No backend session guard exists yet — fall back to the mock user id
-      // so the dashboard still renders if this route is reached directly.
-      const currentUser = await authService.getCurrentUser()
-      const resolvedUserId = currentUser?.id ?? 'user-mock-1'
-      if (cancelled) return
-      setUserId(resolvedUserId)
+      setLoading(true)
+      setError(null)
+      try {
+        // No backend session guard exists yet — fall back to the mock user id
+        // so the dashboard still renders if this route is reached directly.
+        const currentUser = await authService.getCurrentUser()
+        const resolvedUserId = currentUser?.id ?? 'user-mock-1'
+        if (cancelled) return
+        setUserId(resolvedUserId)
 
-      const [problemList, userStats, historicalLogs, recommendedProblem] = await Promise.all([
-        problemsService.listProblems(),
-        dashboardService.getUserStats(resolvedUserId),
-        dashboardService.getHistoricalLogs(resolvedUserId),
-        dashboardService.getRecommendedProblem(resolvedUserId),
-      ])
-      if (cancelled) return
+        const [problemList, userStats, historicalLogs, recommendedProblem] = await Promise.all([
+          problemsService.listProblems(),
+          dashboardService.getUserStats(resolvedUserId),
+          dashboardService.getHistoricalLogs(resolvedUserId),
+          dashboardService.getRecommendedProblem(resolvedUserId),
+        ])
+        if (cancelled) return
 
-      setProblems(problemList)
-      setStats(userStats)
-      setLogs(historicalLogs)
-      setRecommended(recommendedProblem)
-      setLoading(false)
+        setProblems(problemList)
+        setStats(userStats)
+        setLogs(historicalLogs)
+        setRecommended(recommendedProblem)
+      } catch (err) {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard.')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
     }
 
     load()
@@ -56,13 +65,25 @@ export function DashboardPage() {
   }, [authService, problemsService, dashboardService])
 
   async function handleStart(problemId: string) {
-    const session = await sessionService.createSession(problemId, userId ?? 'user-mock-1')
-    startSession(session.sessionId)
-    navigate(`/session/${session.sessionId}/requirements`)
+    try {
+      const session = await sessionService.createSession(problemId, userId ?? 'user-mock-1')
+      startSession(session.sessionId)
+      navigate(`/session/${session.sessionId}/requirements`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start session.')
+    }
   }
 
   function handleReview(sessionId: string) {
     navigate(`/session/${sessionId}/report`)
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <span className="font-mono text-xs uppercase tracking-[0.14em] text-app-red">{error}</span>
+      </div>
+    )
   }
 
   if (loading || !stats) {

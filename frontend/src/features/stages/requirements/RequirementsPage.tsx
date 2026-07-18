@@ -4,7 +4,7 @@
 // (ui-reference 10.10.15 PM) runs as a local heuristic, independent of the
 // submit-triggered AI review stream — see ambiguity.ts.
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, Plus, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -56,8 +56,26 @@ function seedOptional(): RequirementItem[] {
   ]
 }
 
-function nextCode(prefix: string, count: number) {
-  return `${prefix}-${String(count + 1).padStart(2, '0')}`
+function parseSavedItems(prefix: string, saved: string[]): RequirementItem[] {
+  return saved.map((entry, i) => {
+    const sep = entry.indexOf(': ')
+    const title = sep === -1 ? entry : entry.slice(0, sep)
+    const description = sep === -1 ? '' : entry.slice(sep + 2)
+    return makeItem(`${prefix}-${String(i + 1).padStart(2, '0')}`, title, description)
+  })
+}
+
+function nextCode(prefix: string, maxSuffix: number) {
+  return `${prefix}-${String(maxSuffix + 1).padStart(2, '0')}`
+}
+
+function highestSuffix(prefix: string, items: RequirementItem[]) {
+  const codePattern = new RegExp(`^${prefix}-(\\d+)$`)
+  return items.reduce((max, item) => {
+    const match = codePattern.exec(item.code)
+    const suffix = match ? Number(match[1]) : 0
+    return Math.max(max, suffix)
+  }, 0)
 }
 
 interface RequirementSectionProps {
@@ -76,7 +94,7 @@ function RequirementSection({ title, prefix, items, onChange, flaggedIds }: Requ
     onChange(items.filter((item) => item.id !== id))
   }
   function addItem() {
-    onChange([...items, makeItem(nextCode(prefix, items.length), 'New Requirement', '')])
+    onChange([...items, makeItem(nextCode(prefix, highestSuffix(prefix, items)), 'New Requirement', '')])
   }
 
   return (
@@ -89,7 +107,7 @@ function RequirementSection({ title, prefix, items, onChange, flaggedIds }: Requ
               <div className="flex items-center justify-between">
                 <MonoLabel>{item.code}</MonoLabel>
                 <div className="flex items-center gap-2">
-                  {flaggedIds.has(item.id) && <Badge variant="gold">Flagged by AI</Badge>}
+                  {flaggedIds.has(item.id) && <Badge variant="gold">Ambiguity detected</Badge>}
                   <button
                     type="button"
                     onClick={() => removeItem(item.id)}
@@ -129,7 +147,7 @@ function RequirementSection({ title, prefix, items, onChange, flaggedIds }: Requ
 }
 
 export function RequirementsPage() {
-  const { sessionId, problem } = useStageSession()
+  const { sessionId, problem, stages, loading } = useStageSession()
   const navigate = useNavigate()
   const review = useReviewStream('requirements', sessionId)
 
@@ -137,6 +155,17 @@ export function RequirementsPage() {
   const [nonFunctional, setNonFunctional] = useState<RequirementItem[]>(seedNonFunctional)
   const [optional, setOptional] = useState<RequirementItem[]>(seedOptional)
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (loading) return
+    const saved = stages.find((s) => s.stageId === 'requirements')?.userContent as
+      | { functional: string[]; nonFunctional: string[]; optional: string[] }
+      | undefined
+    setFunctional(saved ? parseSavedItems('F', saved.functional) : seedFunctional())
+    setNonFunctional(saved ? parseSavedItems('NF', saved.nonFunctional) : seedNonFunctional())
+    setOptional(saved ? parseSavedItems('O', saved.optional) : seedOptional())
+    setDismissed(new Set())
+  }, [sessionId, loading, stages])
 
   const ambiguities = useMemo(
     () => detectAmbiguities(nonFunctional).filter((hit) => !dismissed.has(hit.key)),

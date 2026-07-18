@@ -49,11 +49,12 @@ export function runMathValidation(values: EstimationValues, problem: Problem | n
   }
 
   if (values.bandwidthGbps <= 0) {
+    status = 'warning'
     notes.push('Bandwidth was left at 0 — derive it from storage/day and read QPS before Stage 5.')
   }
 
   if (status === 'verified' && notes.length === 0) {
-    notes.push('DAU-to-QPS derivation and storage/day figures check out against typical ratios for this scale.')
+    notes.push('DAU and QPS figures check out against typical ratios for this scale.')
   }
 
   return { status, notes }

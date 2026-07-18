@@ -1,9 +1,10 @@
-// Shared review-stream sidebar for Stages 1-4 (Session 6). Renders the 5
-// states useReviewStream walks through: idle, streaming, finding, final,
-// error. Gate state is always shown as advisory telemetry (StatusDot),
-// never pass/fail — Section 5 / CLAUDE.md.
+// Right panel (bottom half) — Section 8's "Architecture Audit" reviewer
+// stream, matching the ui-reference canvas mockup's naming. Same 5-state
+// pattern as Session 6's ReviewStreamSidebar (idle/streaming/finding/final/
+// error), adapted to useHldReviewStream's per-event finding arrival instead
+// of a single batch after isFinal — findings render into the list the
+// instant they land, synchronized with HldCanvasShell's node-glow trigger.
 
-import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Loader2, RotateCcw, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -14,7 +15,7 @@ import { MonoLabel } from '@/components/common/MonoLabel'
 import { StatusDot } from '@/components/common/StatusDot'
 import { StreamingText } from '@/components/common/StreamingText'
 import type { Finding, ReviewerVerdict, Severity } from '@/domain/review'
-import type { ReviewStreamStatus } from '@/hooks/useReviewStream'
+import type { HldReviewStatus } from '@/hooks/useHldReviewStream'
 
 const SEVERITY_VARIANT: Record<Severity, 'red' | 'gold' | 'neutral' | 'green'> = {
   CRITICAL: 'red',
@@ -23,37 +24,29 @@ const SEVERITY_VARIANT: Record<Severity, 'red' | 'gold' | 'neutral' | 'green'> =
   SUGGESTION: 'green',
 }
 
-export interface ReviewStreamSidebarProps {
-  reviewerName: string
-  reviewerTagline: string
-  status: ReviewStreamStatus
+export interface ArchitectureAuditPanelProps {
+  submitLabel: string
+  idleHint: string
+  status: HldReviewStatus
   streamedText: string
   findings: Finding[]
   verdict: ReviewerVerdict | null
   error: string | null
   onSubmit: () => void
-  submitLabel?: string
-  submitDisabled?: boolean
-  idleHint?: string
-  onChallenge?: (finding: Finding) => void
-  beforeStream?: ReactNode
+  onChallenge: (finding: Finding) => void
 }
 
-export function ReviewStreamSidebar({
-  reviewerName,
-  reviewerTagline,
+export function ArchitectureAuditPanel({
+  submitLabel,
+  idleHint,
   status,
   streamedText,
   findings,
   verdict,
   error,
   onSubmit,
-  submitLabel = 'Run AI Review',
-  submitDisabled = false,
-  idleHint = 'Run the AI reviewer once your stage content is ready — this never blocks moving to another tab.',
   onChallenge,
-  beforeStream,
-}: ReviewStreamSidebarProps) {
+}: ArchitectureAuditPanelProps) {
   const isBusy = status === 'streaming' || status === 'finding'
   const showStream = status === 'streaming' || status === 'finding' || status === 'final'
   const showFindings = (status === 'finding' || status === 'final') && findings.length > 0
@@ -63,9 +56,9 @@ export function ReviewStreamSidebar({
       <div className="flex items-start justify-between gap-2">
         <div>
           <MonoLabel className="block" muted={false}>
-            {reviewerName}
+            AI Reviewer
           </MonoLabel>
-          <p className="mt-1 text-xs text-app-ink-muted">{reviewerTagline}</p>
+          <h2 className="text-sm font-semibold text-app-ink">Architecture Audit</h2>
         </div>
         {isBusy && (
           <Badge variant="navy" className="shrink-0 gap-1">
@@ -75,13 +68,11 @@ export function ReviewStreamSidebar({
         )}
       </div>
 
-      {beforeStream}
-
       {status === 'idle' && (
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
             <p className="text-xs text-app-ink-muted">{idleHint}</p>
-            <Button size="sm" onClick={onSubmit} disabled={submitDisabled}>
+            <Button size="sm" onClick={onSubmit}>
               {submitLabel}
             </Button>
           </CardContent>
@@ -91,7 +82,7 @@ export function ReviewStreamSidebar({
       {showStream && (
         <Card>
           <CardHeader>
-            <CardTitle>Review Stream</CardTitle>
+            <CardTitle>Audit Stream</CardTitle>
             {isBusy && <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-app-ink-muted" aria-hidden="true" />}
           </CardHeader>
           <CardContent>
@@ -113,7 +104,7 @@ export function ReviewStreamSidebar({
                 <CardContent className="flex flex-col gap-2 py-3">
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant={SEVERITY_VARIANT[finding.severity]}>{finding.severity}</Badge>
-                    {onChallenge && verdict && (finding.severity === 'CRITICAL' || finding.severity === 'MAJOR') && (
+                    {(finding.severity === 'CRITICAL' || finding.severity === 'MAJOR') && (
                       <button
                         type="button"
                         onClick={() => onChallenge(finding)}
@@ -125,6 +116,9 @@ export function ReviewStreamSidebar({
                   </div>
                   <p className="text-sm text-app-ink">{finding.point}</p>
                   <p className="font-mono text-[11px] text-app-ink-muted">{finding.evidence}</p>
+                  {finding.nodeId && (
+                    <MonoLabel className="text-[9px]">Target node: {finding.nodeId}</MonoLabel>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -149,7 +143,7 @@ export function ReviewStreamSidebar({
             <CardFooter>
               <Button variant="outline" size="sm" onClick={onSubmit}>
                 <RotateCcw className="h-3.5 w-3.5" />
-                Re-run Review
+                Re-run Audit
               </Button>
             </CardFooter>
           </Card>

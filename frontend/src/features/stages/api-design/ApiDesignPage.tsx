@@ -2,7 +2,7 @@
 // response schema, auth strategy, REST vs gRPC — reviewed for idempotency,
 // pagination, versioning, error codes.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -45,6 +45,9 @@ function seedEndpoints(): EndpointDraft[] {
   ]
 }
 
+const DEFAULT_AUTH_STRATEGY =
+  'JWT bearer token issued after Google OAuth login; short-lived access token with refresh-token rotation.'
+
 const METHODS: Method[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 
 const METHOD_TEXT_CLASS: Record<Method, string> = {
@@ -56,15 +59,29 @@ const METHOD_TEXT_CLASS: Record<Method, string> = {
 }
 
 export function ApiDesignPage() {
-  const { sessionId, problem } = useStageSession()
+  const { sessionId, problem, stages, loading } = useStageSession()
   const navigate = useNavigate()
   const review = useReviewStream('api', sessionId)
 
   const [endpoints, setEndpoints] = useState<EndpointDraft[]>(seedEndpoints)
   const [protocol, setProtocol] = useState<'REST' | 'GRPC'>('REST')
-  const [authStrategy, setAuthStrategy] = useState(
-    'JWT bearer token issued after Google OAuth login; short-lived access token with refresh-token rotation.',
-  )
+  const [authStrategy, setAuthStrategy] = useState(DEFAULT_AUTH_STRATEGY)
+
+  useEffect(() => {
+    if (loading) return
+    const saved = stages.find((s) => s.stageId === 'api')?.userContent as
+      | {
+          endpoints: Array<{ method: Method; path: string; description: string; requiresAuth: boolean }>
+          authStrategy: string
+          protocol: 'REST' | 'GRPC'
+        }
+      | undefined
+    setEndpoints(
+      saved ? saved.endpoints.map((e) => makeEndpoint(e.method, e.path, e.description, e.requiresAuth)) : seedEndpoints(),
+    )
+    setAuthStrategy(saved?.authStrategy ?? DEFAULT_AUTH_STRATEGY)
+    setProtocol(saved?.protocol ?? 'REST')
+  }, [sessionId, loading, stages])
 
   function updateEndpoint(id: string, patch: Partial<EndpointDraft>) {
     setEndpoints((items) => items.map((item) => (item.id === id ? { ...item, ...patch } : item)))

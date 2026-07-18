@@ -15,7 +15,13 @@ import type {
   ReviewStreamService,
   StageReviewRequest,
 } from '../interfaces/ReviewStreamService'
-import { finalReportFixture, hldReviewFixture, spofChallengeOutcome, stageReviewFixtures } from './fixtures'
+import {
+  deepDiveReviewFixture,
+  finalReportFixture,
+  hldReviewFixture,
+  spofChallengeOutcome,
+  stageReviewFixtures,
+} from './fixtures'
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -57,8 +63,9 @@ export class MockReviewStreamService implements ReviewStreamService {
     }
   }
 
-  async *streamHLDReview(_request: HLDReviewRequest): AsyncGenerator<HLDAnnotationEvent> {
-    const tokens = tokenize(hldReviewFixture.commentary)
+  async *streamHLDReview(request: HLDReviewRequest): AsyncGenerator<HLDAnnotationEvent> {
+    const fixture = request.stageId === 'deepdive' ? deepDiveReviewFixture : hldReviewFixture
+    const tokens = tokenize(fixture.commentary)
     const findingAfterToken = Math.floor(tokens.length / 2)
 
     for (let i = 0; i < tokens.length; i++) {
@@ -66,7 +73,7 @@ export class MockReviewStreamService implements ReviewStreamService {
       yield { textToken: tokens[i], isFinal: false }
 
       if (i === findingAfterToken) {
-        for (const finding of hldReviewFixture.findings) {
+        for (const finding of fixture.findings) {
           await delay(200)
           yield { finding, isFinal: false }
         }
@@ -74,7 +81,7 @@ export class MockReviewStreamService implements ReviewStreamService {
     }
 
     await delay(150)
-    yield { isFinal: true, verdict: hldReviewFixture.verdict }
+    yield { isFinal: true, verdict: fixture.verdict }
   }
 
   async *streamArbitration(request: ArbitrationRequest): AsyncGenerator<ArbitrationStreamEvent> {

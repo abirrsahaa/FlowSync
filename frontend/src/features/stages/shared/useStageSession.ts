@@ -7,12 +7,14 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useServices } from '@/services/ServiceProvider'
 import type { Problem } from '@/domain/problem'
+import type { StageOutput } from '@/domain/session'
 
 const FALLBACK_PROBLEM_ID = 'design-youtube'
 
 export interface StageSession {
   sessionId: string
   problem: Problem | null
+  stages: StageOutput[]
   loading: boolean
 }
 
@@ -20,6 +22,7 @@ export function useStageSession(): StageSession {
   const { sessionId = 'mock-session' } = useParams()
   const { sessionService, problemsService } = useServices()
   const [problem, setProblem] = useState<Problem | null>(null)
+  const [stages, setStages] = useState<StageOutput[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -32,6 +35,7 @@ export function useStageSession(): StageSession {
       const resolved = await problemsService.getProblem(problemId)
       if (cancelled) return
       setProblem(resolved ?? null)
+      setStages(session?.stages ?? [])
       setLoading(false)
     }
 
@@ -41,5 +45,5 @@ export function useStageSession(): StageSession {
     }
   }, [sessionId, sessionService, problemsService])
 
-  return { sessionId, problem, loading }
+  return { sessionId, problem, stages, loading }
 }

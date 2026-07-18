@@ -3,7 +3,7 @@
 // qualitative judgment. The design brief calls this out as a trust signal
 // that must stay visible, not collapse into an implementation detail.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calculator } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -36,26 +36,32 @@ const FIELDS: { key: keyof EstimationValues; label: string; hint: string }[] = [
 ]
 
 export function EstimationPage() {
-  const { sessionId, problem } = useStageSession()
+  const { sessionId, problem, stages, loading } = useStageSession()
   const navigate = useNavigate()
   const review = useReviewStream('estimation', sessionId)
 
   const [values, setValues] = useState<EstimationValues>(ZERO_VALUES)
   const [mathResult, setMathResult] = useState<MathValidationResult | null>(null)
-  const seeded = useRef(false)
 
   useEffect(() => {
-    if (seeded.current || !problem) return
-    seeded.current = true
-    setValues({
-      dau: problem.expectedScale.dau,
-      readQps: problem.expectedScale.readQps,
-      writeQps: problem.expectedScale.writeQps,
-      storageGbPerDay: problem.expectedScale.storageGbPerDay,
-      bandwidthGbps: 0,
-      memoryPerServerGb: 64,
-    })
-  }, [problem])
+    if (loading) return
+    const saved = stages.find((s) => s.stageId === 'estimation')?.userContent as EstimationValues | undefined
+    if (saved) {
+      setValues(saved)
+    } else if (problem) {
+      setValues({
+        dau: problem.expectedScale.dau,
+        readQps: problem.expectedScale.readQps,
+        writeQps: problem.expectedScale.writeQps,
+        storageGbPerDay: problem.expectedScale.storageGbPerDay,
+        bandwidthGbps: 0,
+        memoryPerServerGb: 64,
+      })
+    } else {
+      setValues(ZERO_VALUES)
+    }
+    setMathResult(null)
+  }, [sessionId, loading, stages, problem])
 
   function updateField(key: keyof EstimationValues, raw: string) {
     const parsed = Number(raw)
@@ -63,6 +69,7 @@ export function EstimationPage() {
   }
 
   function handleSubmit() {
+    if (loading || !problem) return
     setMathResult(runMathValidation(values, problem))
     review.submit({ ...values })
   }
@@ -86,6 +93,7 @@ export function EstimationPage() {
           error={review.error}
           onSubmit={handleSubmit}
           onChallenge={handleChallenge}
+          submitDisabled={loading || !problem}
           idleHint="Fill in your capacity estimate, then submit — a deterministic math check runs first, before the LLM ever sees your numbers."
           beforeStream={
             mathResult && (
