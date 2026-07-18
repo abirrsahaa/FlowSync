@@ -16,7 +16,7 @@ None of that needs to be re-pasted into each prompt — Claude Code will read it
 
 ## ✅ Session 1 — Project scaffold (done)
 
-Vite + React 18 + TypeScript, Tailwind, Radix primitives, Framer Motion, `@tldraw/tldraw`, `react-router-dom`, `recharts`, `zustand`, `@fontsource` fonts all installed in `frontend/`. Path alias `@/*` → `frontend/src/*`. Design-token CSS variables for both themes (`app-*` light, `console-*` dark, `gate-*` states) are in `src/index.css` and wired into `tailwind.config.js`. `npm run build` and `npm run dev` both verified working. `src/App.tsx` is currently just a placeholder — Session 3 replaces it with the real router.
+Vite + React 19 + TypeScript, Tailwind, Radix primitives, Framer Motion, `@tldraw/tldraw`, `react-router-dom`, `recharts`, `zustand`, `@fontsource` fonts all installed in `frontend/`. Path alias `@/*` → `frontend/src/*`. Design-token CSS variables for both themes (`app-*` light, `console-*` dark, `gate-*` states) are in `src/index.css` and wired into `tailwind.config.js`. `npm run build` and `npm run dev` both verified working. `src/App.tsx` is currently just a placeholder — Session 3 replaces it with the real router.
 
 ---
 
