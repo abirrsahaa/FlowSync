@@ -11,6 +11,7 @@ import { ApiDesignPage } from '@/features/stages/api-design/ApiDesignPage'
 import { DataModelPage } from '@/features/stages/data-model/DataModelPage'
 import { HldCanvasPage } from '@/features/stages/hld-canvas/HldCanvasPage'
 import { DeepDivePage } from '@/features/stages/deep-dive/DeepDivePage'
+import { ChallengePage } from '@/features/challenge/ChallengePage'
 
 function AppRoute({ sessionNumber, name }: { sessionNumber: number; name: string }) {
   return (
@@ -86,7 +87,11 @@ export function AppRouter() {
 
       <Route
         path="/session/:sessionId/challenge"
-        element={<AppRoute sessionNumber={8} name="Challenge / Arbitration Duel" />}
+        element={
+          <AppShell navSlot={<StageTopNav />} actions={<SubmitSolutionButton />}>
+            <ChallengePage />
+          </AppShell>
+        }
       />
       <Route path="/session/:sessionId/report" element={<AppRoute sessionNumber={9} name="Final Report" />} />
       <Route path="/session/:sessionId/replay" element={<AppRoute sessionNumber={9} name="Session Replay" />} />

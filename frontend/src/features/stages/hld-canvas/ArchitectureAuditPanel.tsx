@@ -48,7 +48,10 @@ export function ArchitectureAuditPanel({
   onChallenge,
 }: ArchitectureAuditPanelProps) {
   const isBusy = status === 'streaming' || status === 'finding'
-  const showStream = status === 'streaming' || status === 'finding' || status === 'final'
+  // On a rehydrated 'final' (stage already submitted, no fresh stream this
+  // mount) streamedText is empty — skip the stream card rather than show a
+  // blank box next to the real findings/score below it.
+  const showStream = status === 'streaming' || status === 'finding' || (status === 'final' && streamedText.length > 0)
   const showFindings = (status === 'finding' || status === 'final') && findings.length > 0
 
   return (

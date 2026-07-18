@@ -8,7 +8,7 @@
 // would build a real ComponentGraph from the tldraw store is deferred
 // (Session 7 scope note) — callers pass a static/mock graph.
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useServices } from '@/services/ServiceProvider'
 import { useSessionProgressStore } from '@/store/sessionProgressStore'
 import type { Finding, ReviewerVerdict } from '@/domain/review'
@@ -55,6 +55,36 @@ export function useHldReviewStream(stageId: HldStageId, sessionId: string): UseH
     setVerdict(null)
     setError(null)
   }, [])
+
+  // Same rehydration as useReviewStream (Session 6): if this stage was
+  // already submitted, jump straight to 'final' from the persisted
+  // StageOutput instead of resetting to idle on every remount — otherwise
+  // leaving and returning to the canvas (e.g. via the Challenge screen)
+  // shows an idle audit panel next to a gate dot that still remembers the score.
+  useEffect(() => {
+    const thisRun = ++runId.current
+    setStatus('idle')
+    setStreamedText('')
+    setFindings([])
+    setVerdict(null)
+    setError(null)
+
+    let cancelled = false
+    ;(async () => {
+      const session = await sessionService.getSession(sessionId)
+      if (cancelled || runId.current !== thisRun) return
+      const existing = session?.stages.find((s) => s.stageId === stageId)
+      if (existing) {
+        setVerdict(existing.reviewerVerdict)
+        setFindings(existing.reviewerVerdict.findings)
+        setStatus('final')
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [stageId, sessionId, sessionService])
 
   const submit = useCallback(
     (input: HldReviewSubmission) => {

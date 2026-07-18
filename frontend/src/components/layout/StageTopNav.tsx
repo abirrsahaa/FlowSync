@@ -13,7 +13,7 @@ import type { StageId } from '@/domain/session'
 
 const STAGE_ORDER: StageId[] = ['requirements', 'estimation', 'api', 'datamodel', 'hld', 'deepdive']
 
-const STAGE_ROUTE_SEGMENT: Record<StageId, string> = {
+export const STAGE_ROUTE_SEGMENT: Record<StageId, string> = {
   requirements: 'requirements',
   estimation: 'estimation',
   api: 'api',
@@ -22,7 +22,7 @@ const STAGE_ROUTE_SEGMENT: Record<StageId, string> = {
   deepdive: 'deep-dive',
 }
 
-const STAGE_LABEL: Record<StageId, string> = {
+export const STAGE_LABEL: Record<StageId, string> = {
   requirements: 'Requirements',
   estimation: 'Estimation',
   api: 'API',

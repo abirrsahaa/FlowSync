@@ -52,9 +52,35 @@ export function useReviewStream(stageId: TextStageId, sessionId: string): UseRev
 
   // Switching stages or sessions must invalidate any in-flight stream and
   // clear the previous stage's verdict/findings before the new one renders.
+  // If this stage was already submitted (e.g. the user left and came back —
+  // via the Challenge screen or just other tabs), rehydrate straight into
+  // 'final' from the persisted StageOutput instead of resetting to idle;
+  // otherwise a correctly-retained gate dot sits next to a sidebar that's
+  // forgotten it was ever reviewed.
   useEffect(() => {
-    reset()
-  }, [stageId, sessionId, reset])
+    const thisRun = ++runId.current
+    setStatus('idle')
+    setStreamedText('')
+    setFindings([])
+    setVerdict(null)
+    setError(null)
+
+    let cancelled = false
+    ;(async () => {
+      const session = await sessionService.getSession(sessionId)
+      if (cancelled || runId.current !== thisRun) return
+      const existing = session?.stages.find((s) => s.stageId === stageId)
+      if (existing) {
+        setVerdict(existing.reviewerVerdict)
+        setFindings(existing.reviewerVerdict.findings)
+        setStatus('final')
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [stageId, sessionId, sessionService])
 
   const submit = useCallback(
     (userContent: Record<string, any>, stageContext: StageContext = {}) => {
