@@ -1,0 +1,54 @@
+# FlowSync UI — Outstanding Improvements
+
+> Tracks the gap between the Stitch mockups in this folder and what `sytem_design.md` / `build_roadmap.md` actually require. Written after three review rounds (dark theme, light "Architect's Studio" theme, then landing/login/signup). Current overall read: **7.5/10** on the in-app screens — strong visual craft, real functional/consistency gaps remain. Fix items in §1 before Phase 1 (Canvas Core) development starts; §0's auth issue should be fixed before Phase 4 (per `sytem_design.md` §25.2's own timeline) but is cheap to fix now while the screens are fresh. Everything else can trail in parallel since those stages build later per the roadmap.
+
+Screenshots referenced by filename, all in this folder.
+
+---
+
+## 0. Landing Page, Login & Sign Up (reviewed separately, 10.25 PM batch)
+
+- [ ] **Login/Sign Up contradict the auth spec — this is the one functional blocker in this batch.** `sytem_design.md` §25.2 is explicit: *"Login is Google-only for this project — no password to store, no password-reset flow to build."* `Screenshot 2026-07-18 at 10.25.54 PM.png` shows the opposite on both sides: Login has a primary "USER IDENTIFIER" + "ENCRYPTION KEY" (password) form with an "ACCESS RECOVERY" (password reset) link, and Google/federated options are demoted to three unlabeled icon buttons below the fold. Sign Up ("PROVISION_IDENTITY") asks for a `03_SECRET_KEYPHRASE` — a password field that, per spec, should never exist since the backend never stores one. Rebuild both around Google OAuth as the *only* path — per §25.2's flow (Google Identity Services button → ID token → `POST /api/auth/google` → backend creates-or-looks-up the user by `google_sub`), there's no backend password anywhere to authenticate against.
+- [ ] **A separate Sign Up screen may not need to exist at all.** Google-OAuth-only apps typically collapse login and signup into one "Continue with Google" action — the backend already handles first-time users transparently (§25.2: *"Look up user by google_sub... If none exists, create one"*). Worth deciding whether "Sign Up" survives as its own screen or becomes the same single button with different framing copy.
+- [ ] **Keep the visual language, rebuild the content around it.** The hacker-console/precision-instrument tone (monospace field labels, "ENCRYPTION ACTIVE" footer, terminal-style copy) is good craft and consistent with the rest of the app's direction — this is a content/flow fix, not a restart. One clean "Sign in with Google" card in this same visual system replaces both screens.
+- [ ] **Landing page markets the wrong product.** `Screenshot 2026-07-18 at 10.25.13 PM.png` ("System Design as High-Scale Telemetry") reads as a genuine cloud-infrastructure/observability console — nav items are Cluster/Traffic/Storage/IAM/Pipeline/Docs, the hero pitches "synchronize high-level system diagrams with live cloud telemetry," and the body shows cluster health %, node counts, an `AWS::EC2` / `K8S::POD` event log. Nothing on the page communicates what FlowSync actually is: a staged, AI-reviewed system-design **interview practice** platform. A first-time visitor — the exact audience this page exists to convert — would not understand it's interview prep software. This needs a content rewrite (hero pitch around the six-stage flow and the AI-test-case-for-system-design insight, a "how it works" section, a problem-library preview, a clear sign-up CTA), while keeping the page's actual visual strength: the dark, live-telemetry, engineering-credibility aesthetic. That skin is a good fit for the challenge/report screens elsewhere in the app — it's just wrapped around the wrong copy here.
+- [ ] **No login/signup entry point on the landing page itself** — the nav has `Deploy` as its only CTA-styled button; there's no visible "Log in" / "Get started" affordance connecting this page to the two auth screens.
+
+---
+
+## 1. Blocking for Phase 1 (Canvas Core) — fix before building Stage 5
+
+Phase 1 builds exactly: the 7 typed node shapes, the 7 typed edge kinds, the component bank, the properties panel, and the tldraw→`ComponentGraph` Adapter (`todo.md` §3). These are the only screens that gate development start.
+
+- [ ] **Component bank shows far more than 7 node types.** `Screenshot 2026-07-18 at 10.14.10 PM.png` lists API Gateway, Load Balancer, CDN, DNS, Web Server, App Server, Worker, Cron Job, Relational/NoSQL/Graph DB variants, and more below the fold. Spec (`sytem_design.md` §8, confirmed by `todo.md` §3: *"confirmed 7, not 5... Build 7."*) defines exactly seven `ShapeUtil`s: `ServiceNode`, `DatabaseNode`, `QueueNode`, `LoadBalancerNode`, `CacheNode`, `CDNNode`, `APIGatewayNode`. **Decide and document before implementation**: are DNS/Worker/Cron Job/Web Server/App Server meant to collapse into `ServiceNode` (as a `technology`/preset prop), and Relational/NoSQL/Graph into `DatabaseNode` (as `dbType`)? If so the mockup's granular list should be relabeled as presets/tech-choices within a node's properties panel, not as separate draggable shapes — otherwise this silently expands Phase 1 scope well past what's spec'd.
+- [ ] **Typed edges have no visual language.** Every canvas mockup (`...9.49.49 PM.png`, `...10.14.10 PM.png`) connects nodes with plain uniform lines. The seven edge kinds (`SYNC_CALL`, `ASYNC_PUBLISH`, `ASYNC_CONSUME`, `DB_READ`, `DB_WRITE`, `CACHE_READ`, `CACHE_WRITE`) need distinct arrowheads/line styles/color or inline labels so type is legible at a glance — this was called out in the original design brief (§2.1/§3) and still isn't addressed in either theme pass.
+- [ ] **Canvas screen runs a different app shell than the rest of the product.** `...10.14.10 PM.png` uses the wordmark "Architect's Studio" and tabs labeled "Stage 1–6"; every other screen (`...10.09.35 PM.png`, `...10.10.15 PM.png`, `...10.10.32/43 PM.png`) uses the "FlowSync" wordmark and the named stage tabs (Requirements / Estimation / API / Data Model / HLD Canvas / Deep Dive). One nav component needs to be built, not two — reconcile which shell is canonical.
+- [ ] **Node↔finding linkage needs one more pass to become an actual highlight, not just a popover.** `...10.14.10 PM.png`'s overlaid "CRITICAL ISSUE" card on the Postgres node is a real improvement over the last round (it visibly ties a finding to a node), but per spec (`sytem_design.md` §14, `editor.setHintingShapes`) the mechanic is the *node itself* glowing the instant its finding resolves, synchronized with the streaming text landing in the review panel. Confirm the popover is meant to sit alongside a glow state on the node border, not replace it.
+
+## 2. Needed before Phase 3 (stage UIs) / Phase 5 (AI review + challenge) — not blocking now
+
+- [ ] **The challenge/arbitration mechanic still isn't represented in this format.** No Arbitration Duel screen was resubmitted in the light theme. Per `sytem_design.md` §9 (and called out as load-bearing in `CLAUDE.md`: *"all three [mechanisms] must be present for the mechanic to work as designed"*), the challenge screen must show: (1) the AI's original finding, (2) a place for the **user to write a justification**, (3) the arbitration verdict **citing a specific number from the user's own Stage 2 estimation**. The dark-theme "Arbitration Duel" screen (prior round) showed a dramatic stress-test/alignment-score treatment but no justification input and no visible citation of the user's own numbers — confirm this got redesigned, not dropped.
+- [ ] **Checklist is still flatter than the data model.** `...10.14.10 PM.png`'s "Integrity Checkpoints" groups a heading with sub-bullets, closer than the previous flat list, but spec's checklist (`sytem_design.md` §8) is a two-level tree of checkpoints each independently marked required/optional and present/absent/partial. Confirm the final component can render that, not just illustrative sub-bullets.
+- [ ] **Multiplayer canvas node styling was never reconciled.** Not part of this batch — the earlier dark-theme multiplayer screen (`Multiplayer War Room`) used gauge/metric cards (progress bars, egress stats) for the same 7 node types that the solo canvas draws as icon+label rectangles. Needs one shared node visual system before Phase 2 (presence/multiplayer) work starts.
+- [ ] **Problem Library — confirm convergence.** Earlier dark-theme round had two divergent card layouts; this round only shows one (`...10.09.35 PM.png`). Good if intentional convergence, worth a one-line confirmation.
+
+## 3. Needs a design decision (ambiguous in current mockups)
+
+- [ ] **Dashed blue outlines on some nav items** (`Estimation`, `HLD Canvas`, `Deep Dive`, `Submit Solution` in `...10.10.15 PM.png`; `Deep Dive` in `...10.10.32 PM.png`; `Start Challenge` in `...10.10.43 PM.png`) — unclear if this is an intentional "not yet reached / up next" affordance (which would be a nice, non-blocking way to show progression) or leftover Stitch editing-selection chrome that shouldn't ship. Confirm intent either way before building the nav component.
+- [ ] **"Live Telemetry" panel on the canvas** (System Load / Ingress / Egress gauges, `...10.14.10 PM.png`) isn't defined anywhere in the spec — there's no backend metric pipeline designed to feed it. Decide: cut it, or scope a real (even if simple) data source before treating it as a committed feature — don't let it get built against fabricated numbers.
+
+## 4. Content/copy — mostly resolved, listed for tracking
+
+- [x] ~~"CERTIFIED ARCHITECT" / "Verified by FlowSync AI" read as an actual credential.~~ Fixed — now "EXCEPTIONAL MASTERY" / "PROFESSIONAL ANALYSIS" (`...10.10.32 PM.png`).
+- [x] ~~YouTube problem card showed 5PB/day storage, 10x the spec's actual 500,000 GB/day.~~ Fixed (`...10.09.35 PM.png`).
+- [ ] **Decorative flavor text without a real referent** — "Historical Logs" panel still shows `COORDS: 40.7128° N, 74.0060° W` and `STATUS: INKED_DRAFT_SYNC` (`...10.09.35 PM.png`). Nothing in the product model produces GPS coordinates for a practice session log. Harmless as texture but worth trimming or replacing with something that maps to real data (e.g. session ID, problem version) so it doesn't read as filler once real data is wired in.
+
+---
+
+## Already strong — no action needed
+
+- Two-layer estimation review surfaced via "MATH: VERIFIED" badges, now reused consistently on Stage 2 and canvas nodes.
+- Stage 1's inline "Ambiguity Detected" diff-style suggestion.
+- Stage-gate colors (OPEN/SOFT/FLAGGED) rendered as small status dots on the final report, not pass/fail badges — matches the "never a hard blocker" requirement.
+- Skill Proficiency radar chart on the dashboard — good, non-generic answer to "progress as a legible trajectory."
+- Component bank categorization (Networking / Services / Databases / Caching) — right instinct, just needs its item list reconciled against the actual 7-type taxonomy (see §1).

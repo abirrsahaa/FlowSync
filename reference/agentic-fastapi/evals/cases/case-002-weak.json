@@ -1,0 +1,9 @@
+{
+  "id": "case-002-weak",
+  "submission": {
+    "functional": ["Users can watch videos"],
+    "non_functional": [],
+    "optional": []
+  },
+  "expect": { "score_range": [0, 5], "must_flag": ["non-functional"] }
+}

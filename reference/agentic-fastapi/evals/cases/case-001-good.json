@@ -1,0 +1,19 @@
+{
+  "id": "case-001-good",
+  "submission": {
+    "functional": [
+      "Users can upload videos",
+      "Users can stream videos with adaptive bitrate",
+      "Users can search videos by title and tags",
+      "Users can comment on videos"
+    ],
+    "non_functional": [
+      "99.9% availability for playback",
+      "p99 video start time < 200ms",
+      "Support 100M DAU with 500k read QPS",
+      "11-nines storage durability for uploaded video"
+    ],
+    "optional": ["Like/dislike counts"]
+  },
+  "expect": { "score_range": [7, 10] }
+}
